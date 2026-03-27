@@ -1,7 +1,9 @@
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from collections.abc import AsyncGenerator
+import os
 
-DATABASE_URL = "mysql+asyncmy://root:Password47@localhost:3306/livemech"
+from collections.abc import AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 engine=create_async_engine(DATABASE_URL,echo=True)
 

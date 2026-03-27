@@ -12,11 +12,28 @@ spec:
       labels:
         app: livemech
     spec:
+      initContainers:
+        - name: run-migrations
+          image: koskedk/livemech:0.0.2
+          command: ["/code/.venv/bin/alembic", "upgrade", "head"]
+          workingDir: /code
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: livemech-secret
+                  key: DATABASE_URL
       containers:
         - name: livemech
-          image: koskedk/livemech:0.0.1
+          image: koskedk/livemech:0.0.2
           ports:
             - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: livemech-secret
+                  key: DATABASE_URL
           resources:
             requests:
               cpu: "100m"
