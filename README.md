@@ -36,18 +36,23 @@ kubectl wait --namespace ingress-nginx \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 
-# 3. Apply MySQL manifests
-kubectl apply -f kubernetes/mysql/secret.yaml
-kubectl apply -f kubernetes/mysql/service.yaml
-kubectl apply -f kubernetes/mysql/statefulset.yaml
-kubectl wait --for=condition=ready pod/mysql-0 --timeout=120s
+# 3. Install MySQL Operator CRDs and controller
+kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-crds.yaml
+kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-operator.yaml
+kubectl -n mysql-operator wait --for=condition=Available deployment/mysql-operator --timeout=60s
 
-# 4. Apply app manifests
+# 4. Apply MySQL manifests
+kubectl apply -f kubernetes/mysql/secret.yaml
+kubectl apply -f kubernetes/mysql/backup.yaml
+kubectl apply -f kubernetes/mysql/innodb-cluster.yaml
+kubectl wait --for=jsonpath='{.status.cluster.status}'=ONLINE innodbcluster/livemech-mysql --timeout=180s
+
+# 5. Apply app manifests
 kubectl apply -f kubernetes/deployment.yaml
 kubectl apply -f kubernetes/service.yaml
 kubectl apply -f kubernetes/ingress.yaml
 
-# 5. Watch rollout (init container runs migrations before pods start)
+# 6. Watch rollout (init container runs migrations before pods start)
 kubectl rollout status deployment/livemech
 ```
 
@@ -72,6 +77,9 @@ kubectl rollout status deployment/livemech
 # Check pod status
 kubectl get pods
 
+# Check InnoDB Cluster status
+kubectl get innodbcluster livemech-mysql
+
 # View app logs
 kubectl logs -l app=livemech
 
@@ -80,7 +88,33 @@ kubectl logs <pod-name> -c run-migrations
 
 # Restart all app pods
 kubectl rollout restart deployment/livemech
+
+# List backups
+kubectl get mysqlbackup
+
+# Trigger a manual backup
+kubectl apply -f - <<EOF
+apiVersion: mysql.oracle.com/v2
+kind: MySQLBackup
+metadata:
+  name: livemech-backup-manual
+spec:
+  clusterName: livemech-mysql
+  backupProfile:
+    dumpInstance:
+      storage:
+        persistentVolumeClaim:
+          claimName: mysql-backup-pvc
+EOF
 ```
+
+### MySQL services created by the operator
+
+| Service | Purpose |
+|---|---|
+| `livemech-mysql` | Read/write (primary) — used by the app |
+| `livemech-mysql-ro` | Read-only (replicas, when instances > 1) |
+| `livemech-mysql-instances` | Direct pod access |
 
 > **Note:** Do not commit `kubernetes/mysql/secret.yaml` with real credentials.
 > Use `kubectl create secret` or a secrets manager in production.

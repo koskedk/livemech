@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-backup-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: mysql.oracle.com/v2
+kind: MySQLBackupSchedule
+metadata:
+  name: livemech-backup
+spec:
+  clusterName: livemech-mysql
+  schedule: "0 2 * * *"
+  backupProfile:
+    name: daily-dump
+    dumpInstance:
+      storage:
+        persistentVolumeClaim:
+          claimName: mysql-backup-pvc
