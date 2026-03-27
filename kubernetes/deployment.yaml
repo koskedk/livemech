@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livemech
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: livemech
+  template:
+    metadata:
+      labels:
+        app: livemech
+    spec:
+      containers:
+        - name: livemech
+          image: koskedk/livemech:0.0.1
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
