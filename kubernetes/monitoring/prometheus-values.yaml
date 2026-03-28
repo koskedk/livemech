@@ -1,0 +1,62 @@
+grafana:
+  adminPassword: admin
+  defaultDashboardsEnabled: true
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki:3100
+      access: proxy
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: ""
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      kubernetes-cluster:
+        gnetId: 315
+        revision: 3
+        datasource: Prometheus
+      kubernetes-pods:
+        gnetId: 12740
+        revision: 5
+        datasource: Prometheus
+      mysql-overview:
+        gnetId: 7362
+        revision: 5
+        datasource: Prometheus
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+
+# Reduce resource usage for KinD
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true

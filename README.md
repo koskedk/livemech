@@ -173,3 +173,77 @@ kubectl scale deployment/livemech --replicas=3
 
 > **Note:** Do not commit `kubernetes/mysql/secret.yaml` with real credentials.
 > Use `kubectl create secret` or a secrets manager in production.
+
+---
+
+## Logging & Monitoring
+
+Stack: **Prometheus + Grafana** (metrics) + **Loki + Promtail** (logs) + **MySQL Exporter**.
+
+### Install
+
+```bash
+# Add Helm repos
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Install Prometheus + Grafana + AlertManager
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring --create-namespace \
+  --values kubernetes/monitoring/prometheus-values.yaml
+
+# Install Loki + Promtail (log aggregation)
+helm install loki grafana/loki-stack \
+  --namespace monitoring \
+  --values kubernetes/monitoring/loki-values.yaml
+
+# Install MySQL Exporter
+helm install mysql-exporter prometheus-community/prometheus-mysql-exporter \
+  --namespace monitoring \
+  --values kubernetes/monitoring/mysql-exporter-values.yaml
+```
+
+### Access Grafana
+
+```bash
+kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+```
+
+Open `http://localhost:3000` — login: `admin` / `admin`
+
+Dashboards are pre-loaded:
+
+| Dashboard | What it shows |
+|---|---|
+| Kubernetes Cluster (315) | Node CPU, memory, pod counts |
+| Kubernetes Pods (12740) | Per-pod resource usage |
+| MySQL Overview (7362) | Queries/sec, connections, InnoDB buffer pool |
+
+### Useful monitoring commands
+
+```bash
+# Check all monitoring pods are running
+kubectl get pods -n monitoring
+
+# Check MySQL exporter is scraping
+kubectl port-forward svc/mysql-exporter-prometheus-mysql-exporter 9104:9104 -n monitoring
+curl http://localhost:9104/metrics | grep mysql_up
+
+# Tail logs for all livemech pods via Loki (from Grafana Explore tab)
+# Query: {app="livemech"}
+```
+
+### Upgrade or uninstall
+
+```bash
+# Upgrade with new values
+helm upgrade monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --values kubernetes/monitoring/prometheus-values.yaml
+
+# Uninstall
+helm uninstall monitoring -n monitoring
+helm uninstall loki -n monitoring
+helm uninstall mysql-exporter -n monitoring
+```

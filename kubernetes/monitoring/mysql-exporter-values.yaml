@@ -1,0 +1,11 @@
+mysql:
+  host: livemech-mysql.default.svc.cluster.local
+  port: 3306
+  user: root
+  pass: Password47
+  protocol: tcp
+
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
