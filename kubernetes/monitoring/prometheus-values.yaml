@@ -4,7 +4,7 @@ grafana:
   additionalDataSources:
     - name: Loki
       type: loki
-      url: http://loki:3100
+      url: http://loki.monitoring.svc.cluster.local:3100
       access: proxy
   dashboardProviders:
     dashboardproviders.yaml:
@@ -29,13 +29,17 @@ grafana:
         revision: 5
         datasource: Prometheus
       mysql-overview:
-        gnetId: 7362
-        revision: 5
+        gnetId: 14057
+        revision: 1
         datasource: Prometheus
 
 prometheus:
   prometheusSpec:
     retention: 7d
+    # Watch ServiceMonitors across all namespaces (needed for mysql-exporter)
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -54,7 +58,19 @@ alertmanager:
             requests:
               storage: 1Gi
 
-# Reduce resource usage for KinD
+# KinD does not expose these endpoints — disable to prevent scrape errors
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
 kubeStateMetrics:
   enabled: true
 

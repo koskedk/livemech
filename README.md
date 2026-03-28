@@ -204,21 +204,36 @@ helm install mysql-exporter prometheus-community/prometheus-mysql-exporter \
   --values kubernetes/monitoring/mysql-exporter-values.yaml
 ```
 
-### Access Grafana
+### Access in browser
+
+All UIs are inside the cluster — use port-forwarding to access them locally:
 
 ```bash
+# Grafana (metrics + logs dashboards)
 kubectl port-forward svc/monitoring-grafana 3000:80 -n monitoring
+
+# Prometheus (raw metrics / query)
+kubectl port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090 -n monitoring
+
+# AlertManager
+kubectl port-forward svc/monitoring-kube-prometheus-alertmanager 9093:9093 -n monitoring
 ```
 
-Open `http://localhost:3000` — login: `admin` / `admin`
+| UI | URL | Login |
+|---|---|---|
+| Grafana | `http://localhost:3000` | admin / admin |
+| Prometheus | `http://localhost:9090` | none |
+| AlertManager | `http://localhost:9093` | none |
 
-Dashboards are pre-loaded:
+Keep the port-forward terminal open while using the UI.
+
+Dashboards are pre-loaded in Grafana:
 
 | Dashboard | What it shows |
 |---|---|
 | Kubernetes Cluster (315) | Node CPU, memory, pod counts |
 | Kubernetes Pods (12740) | Per-pod resource usage |
-| MySQL Overview (7362) | Queries/sec, connections, InnoDB buffer pool |
+| MySQL Overview (14057) | Queries/sec, connections, InnoDB buffer pool |
 
 ### Useful monitoring commands
 
