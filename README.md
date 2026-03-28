@@ -118,5 +118,35 @@ EOF
 | `livemech-mysql-ro` | Read-only (replicas, when instances > 1) |
 | `livemech-mysql-instances` | Direct pod access |
 
+### Scaling
+
+**MySQL (InnoDB Cluster)** — edit `instances` in `kubernetes/mysql/innodb-cluster.yaml`:
+
+```yaml
+instances: 3    # must be odd: 1, 3, 5...
+router:
+  instances: 2  # scale routers independently
+```
+
+```bash
+kubectl apply -f kubernetes/mysql/innodb-cluster.yaml
+kubectl get innodbcluster livemech-mysql --watch
+```
+
+The operator handles replication and primary election automatically.
+
+> **Note:** Always use an odd number of MySQL instances (1, 3, 5) for group replication quorum. Never use 2 or 4.
+
+**App (livemech)** — edit `replicas` in `kubernetes/deployment.yaml`, then apply:
+
+```bash
+kubectl apply -f kubernetes/deployment.yaml
+
+# Or imperatively
+kubectl scale deployment/livemech --replicas=3
+```
+
+---
+
 > **Note:** Do not commit `kubernetes/mysql/secret.yaml` with real credentials.
 > Use `kubectl create secret` or a secrets manager in production.
