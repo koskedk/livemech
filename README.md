@@ -27,7 +27,7 @@ DATABASE_URL="mysql+asyncmy://root:Password47@localhost:3306/livemech" uv run al
 
 ```bash
 # 1. Create the kind cluster (if using kind)
-kind create cluster --config kubernetes/cluster.yaml
+kind create cluster --config kubernetes/cluster.yaml --name livemech
 
 # 2. Install nginx ingress controller
 kubectl apply -f kubernetes/nginx-ingress.yaml
