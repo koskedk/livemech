@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-backup-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mysql-backup-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mysql-backup-role
+rules:
+  - apiGroups: ["mysql.oracle.com"]
+    resources: ["mysqlbackups"]
+    verbs: ["create", "get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: mysql-backup-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: mysql-backup-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: mysql-backup-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: livemech-backup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: mysql-backup-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: backup-trigger
+              image: bitnami/kubectl:latest
+              command:
+                - kubectl
+                - apply
+                - -f
+                - /config/backup.yaml
+              volumeMounts:
+                - name: backup-spec
+                  mountPath: /config
+          volumes:
+            - name: backup-spec
+              configMap:
+                name: mysql-backup-spec
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-backup-spec
+data:
+  backup.yaml: |
+    apiVersion: mysql.oracle.com/v2
+    kind: MySQLBackup
+    metadata:
+      generateName: livemech-backup-
+    spec:
+      clusterName: livemech-mysql
+      backupProfile:
+        dumpInstance:
+          storage:
+            persistentVolumeClaim:
+              claimName: mysql-backup-pvc

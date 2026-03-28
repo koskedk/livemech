@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: livemech-create-db
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-db
+          image: mysql:9.6
+          command:
+            - mysql
+            - -h
+            - livemech-mysql
+            - -u
+            - root
+            - -pPassword47
+            - -e
+            - CREATE DATABASE IF NOT EXISTS livemech;
