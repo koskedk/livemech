@@ -118,6 +118,29 @@ EOF
 | `livemech-mysql-ro` | Read-only (replicas, when instances > 1) |
 | `livemech-mysql-instances` | Direct pod access |
 
+### Connecting with MySQL Workbench
+
+MySQL is inside the cluster — use port-forward to expose it locally:
+
+```bash
+# Primary (read/write)
+kubectl port-forward svc/livemech-mysql 3306:3306
+
+# Read-only replicas (when instances > 1)
+kubectl port-forward svc/livemech-mysql-ro 3307:3306
+```
+
+Then connect Workbench to:
+
+| | Primary | Read-only |
+|---|---|---|
+| Host | `127.0.0.1` | `127.0.0.1` |
+| Port | `3306` | `3307` |
+| Username | `root` | `root` |
+| Password | `Password47` | `Password47` |
+
+Keep the port-forward terminal open while using Workbench. The router automatically routes to the current primary — no changes needed if a failover occurs.
+
 ### Scaling
 
 **MySQL (InnoDB Cluster)** — edit `instances` in `kubernetes/mysql/innodb-cluster.yaml`:
