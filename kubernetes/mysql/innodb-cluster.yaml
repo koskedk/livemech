@@ -4,7 +4,7 @@ metadata:
   name: livemech-mysql
 spec:
   secretName: livemech-mysql-secret
-  tlsUseSelfSigned: true
+tlsUseSelfSigned: true
   instances: 1
   router:
     instances: 1

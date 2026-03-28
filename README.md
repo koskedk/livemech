@@ -37,8 +37,8 @@ kubectl wait --namespace ingress-nginx \
   --timeout=120s
 
 # 3. Install MySQL Operator CRDs and controller
-kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-crds.yaml
-kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-operator.yaml
+kubectl apply -f kubernetes/mysql-operator-crds.yaml
+kubectl apply -f kubernetes/mysql-operator.yaml
 kubectl -n mysql-operator wait --for=condition=Available deployment/mysql-operator --timeout=180s
 
 # 4. Apply MySQL manifests
@@ -46,6 +46,8 @@ kubectl apply -f kubernetes/mysql/secret.yaml
 kubectl apply -f kubernetes/mysql/backup.yaml
 kubectl apply -f kubernetes/mysql/innodb-cluster.yaml
 kubectl wait --for=jsonpath='{.status.cluster.status}'=ONLINE innodbcluster/livemech-mysql --timeout=180s
+kubectl apply -f kubernetes/mysql/create-db-job.yaml
+kubectl wait --for=condition=complete job/livemech-create-db --timeout=60s
 
 # 5. Apply app manifests
 kubectl apply -f kubernetes/deployment.yaml
